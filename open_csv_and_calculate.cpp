@@ -7,6 +7,21 @@
 #include <stdlib.h>
 #include <regex>
 
+struct FormulaCell{
+    std::pair<int, int> resultCelliIndices;
+    std::pair<std::string, std::string> argument1;
+    std::pair<std::string, std::string> argument2;
+    char operation;
+    
+    FormulaCell(std::pair<int, int> resultCelliIndices, std::pair<std::string, std::string> argument1,
+    std::pair<std::string, std::string> argument2, char operation){
+    this->resultCelliIndices = resultCelliIndices;
+    this->argument1 = argument1;
+    this->argument2 = argument2;
+    this->operation = operation;
+    }
+};
+
 bool isFormula(std::string cell) {
     const std::regex r("\\=([a-zA-Z]+)(\\d+)(\\+|\\-|\\*|\\/)([a-zA-Z]+)(\\d+)");
 
@@ -55,6 +70,7 @@ void calculate(std::vector < std::vector < std::string >> & tableData) {
 
             if (isFormula(tempCell)) {
                 std::vector < std::pair < std::string, std::string >> arguments = parseArguments(tempCell);
+                //auto arguments = parseArguments(tempCell);
                 char operation = parseOperation(tempCell);
                 int k = 1;
                 std::string arg1Letter, arg2Letter, arg1Digit, arg2Digit;
@@ -93,9 +109,6 @@ void calculate(std::vector < std::vector < std::string >> & tableData) {
                 }
                 a = atoi(tableData[aIndex.first][aIndex.second].c_str());
                 b = atoi(tableData[bIndex.first][bIndex.second].c_str());
-                if (operation == '+') {
-
-                }
                 switch (operation) {
                 case '+':
                     tableData[i][j] = std::to_string(a + b);
@@ -107,6 +120,9 @@ void calculate(std::vector < std::vector < std::string >> & tableData) {
                     tableData[i][j] = std::to_string(a * b);
                     break;
                 case '/':
+                    if (b == 0) {
+                        throw "Error: division by zero";
+                    }
                     tableData[i][j] = std::to_string(a / b);
                     break;
                 default:
@@ -118,6 +134,8 @@ void calculate(std::vector < std::vector < std::string >> & tableData) {
         }
     }
 }
+
+
 
 void readAndCalculateCsv(std::string fileName) {
     std::string suffix = ".csv";
@@ -162,8 +180,10 @@ int main(int argc, char * argv[]) {
     std::string fileName = argv[1];
     try {
         readAndCalculateCsv(fileName);
-    } catch (char const* str) {
+    } catch (char
+        const * str) {
         std::cout << str << std::endl;
     }
+    //std::cout << __cplusplus << std::endl;
     return 0;
 }
