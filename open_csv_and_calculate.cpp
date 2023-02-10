@@ -5,17 +5,31 @@
 #include <sstream>
 #include <ctype.h>
 #include <stdlib.h>
+#include <regex>
+bool isFormulas(std::string cell){
+    const std::regex r("\\=[a-zA-Z]+\\d+(\\+|\\-|\\*|\\/)[a-zA-Z]+\\d+");    
+    return std::regex_match(cell, r);
+}
+
+bool isNumber(std::string cell){
+    const std::regex r("\\d+");    
+    return std::regex_match(cell, r);
+}
+
+bool isWord(std::string cell){
+    const std::regex r("[a-zA-Z]+");    
+    return std::regex_match(cell, r);
+}
+
 
 
 void calculate(std::vector < std::vector < std::string >> & tableData) {
     for (int i = 0; i < tableData.size(); i++) {
         for (int j = 0; j < tableData[i].size(); j++) {
             std::string tempCell = tableData[i][j];
-            int k = 0;
-            char temp1 = tempCell[k];
-            char temp2 = '=';
-            if (temp1 == temp2) {
-                k++;
+            
+            if (isFormulas(tempCell)) {
+                int k = 1;
                 std::string arg1Letter, arg2Letter, arg1Digit, arg2Digit;
                 char operation;
                 while (isalpha(tempCell[k])) {
@@ -87,6 +101,9 @@ void calculate(std::vector < std::vector < std::string >> & tableData) {
                     throw "Invalid operation";
                 }
             }
+            else if (!isNumber(tempCell)&&(!isWord(tempCell)&&i==0)&&(!tempCell.empty()&&i==0&&j==0)){
+                throw ("Invalid cell value");
+}
         }
     }
 }
@@ -138,5 +155,7 @@ int main(int argc, char * argv[]) {
     }
     std::string fileName = argv[1];
     readAndCalculateCsv(fileName);
+    std::string tempStr = "=A1^B1";
+    std::cout<<isFormulas(tempStr)<<std::endl;
     return 0;
 }
