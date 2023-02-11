@@ -66,9 +66,7 @@ bool isWord(std::string cell) {
     return std::regex_match(cell, r);
 }
 
-std::pair<int, int> indicesCell(
-    std::pair<std::string, std::string> argument,
-    std::vector<std::vector<std::string>> &tableData) {
+std::pair<int, int> indicesCell(std::pair<std::string, std::string> argument, std::vector<std::vector<std::string>> &tableData) {
     std::pair<int, int> indices(-1, -1);
     for (int j = 0; j < tableData[0].size(); j++) {
         if (argument.first == tableData[0][j]) {
@@ -113,10 +111,11 @@ void parseAndCalculateTable(std::vector<std::vector<std::string>> &tableData) {
     for (int i = 0; i < tableData.size(); i++) {
         for (int j = 0; j < tableData[i].size(); j++) {
             std::string tempCell = tableData[i][j];
-
             if (isFormula(tempCell)) {
-                // std::vector < std::pair < std::string, std::string >>
-                // arguments = parseArguments(tempCell);
+                // std::cout<<tempCell<<std::endl;
+                // std::cout<<isNumber(tempCell)<<std::endl;
+                //  std::vector < std::pair < std::string, std::string >>
+                //  arguments = parseArguments(tempCell);
                 FormulaCell parsedCell = parseFormula(tempCell);
                 // auto arguments = parseArguments(tempCell);
                 char operation = parsedCell.operation;
@@ -127,36 +126,35 @@ void parseAndCalculateTable(std::vector<std::vector<std::string>> &tableData) {
                 std::pair<int, int> bIndex(-1, -1);
 
                 std::stack<FormulaCell> stack;
+                parsedCell.resultCelliIndices = std::make_pair(i, j);
                 stack.push(parsedCell);
-                while (!stack.empty() &&
-                       stack.size() < tableData[i].size() - 1) {
-                    aIndex = indicesCell(parsedCell.argument1, tableData);
-                    bIndex = indicesCell(parsedCell.argument2, tableData);
-
+                while (!stack.empty()) {
+                    if (stack.size() > tableData[0].size() * tableData.size() - 1) {
+                        throw "Error: unable to calculate formulas in the table, there was a looping of formulas";
+                    }
+                    aIndex = indicesCell(stack.top().argument1, tableData);
+                    bIndex = indicesCell(stack.top().argument2, tableData);
+                    if (aIndex.first * aIndex.second * bIndex.first * bIndex.second < 0) {
+                        throw "Error: reference to a non-existent cell";
+                    }
                     if (isFormula(tableData[aIndex.first][aIndex.second])) {
-                        stack.push(parseFormula(
-                            tableData[aIndex.first][aIndex.second]));
-                    } else if (isFormula(tableData[bIndex.first][bIndex.second]
-                                             .c_str())) {
-                        stack.push(parseFormula(
-                            tableData[bIndex.first][bIndex.second]));
+                        parsedCell = parseFormula(tableData[aIndex.first][aIndex.second]);
+                        parsedCell.resultCelliIndices = std::make_pair(aIndex.first, aIndex.second);
+                        stack.push(parsedCell);
+
+                    } else if (isFormula(tableData[bIndex.first][bIndex.second].c_str())) {
+                        parsedCell = parseFormula(tableData[bIndex.first][bIndex.second]);
+                        parsedCell.resultCelliIndices = std::make_pair(bIndex.first, bIndex.second);
+                        stack.push(parsedCell);
                     } else {
-                        if (aIndex.first * aIndex.second * bIndex.first *
-                                bIndex.second <
-                            0) {
-                            throw "Error: reference to a non-existent cell";
-                        }
-                        a = atoi(
-                            tableData[aIndex.first][aIndex.second].c_str());
-                        b = atoi(
-                            tableData[bIndex.first][bIndex.second].c_str());
-                        tableData[i][j] = std::to_string(
-                            calculateExpression(a, b, operation));
+                        a = atoi(tableData[aIndex.first][aIndex.second].c_str());
+                        b = atoi(tableData[bIndex.first][bIndex.second].c_str());
+                        tableData[stack.top().resultCelliIndices.first][stack.top().resultCelliIndices.second] = std::to_string(calculateExpression(a, b, operation));
                         stack.pop();
                     }
                 }
-            } else if (!isNumber(tempCell) && (!isWord(tempCell) && i == 0) &&
-                       (!tempCell.empty() && i == 0 && j == 0)) {
+            } else if (!isNumber(tempCell) && !(isWord(tempCell) && i == 0) &&
+                       !(tempCell.empty() && i == 0 && j == 0)) {
                 throw("Error: invalid cell value");
             }
         }
@@ -210,6 +208,5 @@ int main(int argc, char *argv[]) {
     } catch (char const *str) {
         std::cout << str << std::endl;
     }
-    // std::cout << __cplusplus << std::endl;
     return 0;
 }
