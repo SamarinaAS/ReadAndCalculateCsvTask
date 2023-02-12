@@ -167,10 +167,7 @@ void parseAndCalculateTable(std::vector<std::vector<std::string>> &tableData) {
                         stack.pop();
                     }
                 }
-            } /*else if (!isNumber(tempCell) && !(isWord(tempCell) && i == 0) &&
-                       !(tempCell.empty() && i == 0 && j == 0)) {
-                throw("Error: invalid cell value");
-            }*/
+            }
         }
     }
 }
