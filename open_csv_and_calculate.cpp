@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <fstream>
@@ -9,73 +10,73 @@
 #include <string>
 #include <vector>
 
-struct FormulaCell {
+struct CellAddress {
+    std::string column;
+    int row;
+
+    CellAddress(std::string column, int row) {
+        this->column = column;
+        this->row = row;
+    }
+};
+
+struct Formula {
     std::pair<int, int> resultCelliIndices;
-    std::pair<std::string, std::string> argument1;
-    std::pair<std::string, std::string> argument2;
+    std::pair<std::string, std::string> arguments;
     char operation;
 
-    FormulaCell(std::pair<int, int> resultCelliIndices,
-                std::pair<std::string, std::string> argument1,
-                std::pair<std::string, std::string> argument2, char operation) {
+    Formula(std::pair<int, int> resultCelliIndices, std::pair<std::string, std::string> arguments, char operation) {
         this->resultCelliIndices = resultCelliIndices;
-        this->argument1 = argument1;
-        this->argument2 = argument2;
-        this->operation = operation;
-    }
-
-    FormulaCell(std::pair<std::string, std::string> argument1,
-                std::pair<std::string, std::string> argument2, char operation) {
-        this->resultCelliIndices = std::make_pair(-1, -1);
-        this->argument1 = argument1;
-        this->argument2 = argument2;
+        this->arguments = arguments;
         this->operation = operation;
     }
 };
 
 bool isFormula(std::string cell) {
-    const std::regex r(
-        "\\=([a-zA-Z]+)(\\d+)(\\+|\\-|\\*|\\/)([a-zA-Z]+)(\\d+)");
-
-    return std::regex_match(cell, r);
+    const std::regex formulaTemplate("\\=((([a-zA-Z]+)(\\d+))|(\\d+))(\\+|\\-|\\*|\\/)((([a-zA-Z]+)(\\d+))|(\\d+))");
+    return std::regex_match(cell, formulaTemplate);
 }
 
-FormulaCell parseFormula(std::string cell) {
-    const std::regex arg("([a-zA-Z]+)(\\d+)");
+Formula parseFormula(std::string cell, std::pair<int, int> resultCelliIndices) {
+    const std::regex formulaTemplate("\\=(\\w+)(\\+|\\-|\\*|\\/)(\\w+)");
     const std::vector<std::smatch> matches{
-        std::sregex_iterator{cbegin(cell), cend(cell), arg},
+        std::sregex_iterator{cbegin(cell), cend(cell), formulaTemplate},
         std::sregex_iterator{}};
-
-    const std::regex oper("(\\+|\\-|\\*|\\/)");
-    std::smatch match;
-    regex_search(cell, match, oper);
-    FormulaCell parsedFormula(
-        std::make_pair(matches[0].str(1), matches[0].str(2)),
-        std::make_pair(matches[1].str(1), matches[1].str(2)), match.str(1)[0]);
+    Formula parsedFormula(resultCelliIndices,
+                          std::make_pair(matches[0].str(1), matches[0].str(3)), matches[0].str(2)[0]);
 
     return parsedFormula;
 }
 
+CellAddress parseCellAddress(std::string cellAddress) {
+    const std::regex cellAddressTemplate("([a-zA-Z]+)(\\d+)");
+    const std::vector<std::smatch> matches{
+        std::sregex_iterator{cbegin(cellAddress), cend(cellAddress), cellAddressTemplate},
+        std::sregex_iterator{}};
+    CellAddress parsedCellAddress(matches[0].str(1), atoi(matches[0].str(2).c_str()));
+    return parsedCellAddress;
+}
+
 bool isNumber(std::string cell) {
-    const std::regex r("\\d+");
-    return std::regex_match(cell, r);
+    const std::regex number("\\d+");
+    return std::regex_match(cell, number);
 }
 
 bool isWord(std::string cell) {
-    const std::regex r("[a-zA-Z]+");
-    return std::regex_match(cell, r);
+    const std::regex word("[a-zA-Z]+");
+    return std::regex_match(cell, word);
 }
 
-std::pair<int, int> indicesCell(std::pair<std::string, std::string> argument, std::vector<std::vector<std::string>> &tableData) {
+std::pair<int, int> indicesCell(CellAddress argument, std::vector<std::vector<std::string>> &tableData) {
     std::pair<int, int> indices(-1, -1);
     for (int j = 0; j < tableData[0].size(); j++) {
-        if (argument.first == tableData[0][j]) {
+        if (argument.column == tableData[0][j]) {
             indices.second = j;
             break;
         }
     }
     for (int i = 0; i < tableData.size(); i++) {
-        if (argument.second == tableData[i][0]) {
+        if (std::to_string(argument.row) == tableData[i][0]) {
             indices.first = i;
             break;
         }
@@ -112,44 +113,51 @@ void parseAndCalculateTable(std::vector<std::vector<std::string>> &tableData) {
         for (int j = 0; j < tableData[i].size(); j++) {
             std::string tempCell = tableData[i][j];
             if (isFormula(tempCell)) {
-                // std::cout<<tempCell<<std::endl;
-                // std::cout<<isNumber(tempCell)<<std::endl;
-                //  std::vector < std::pair < std::string, std::string >>
-                //  arguments = parseArguments(tempCell);
-                FormulaCell parsedCell = parseFormula(tempCell);
-                // auto arguments = parseArguments(tempCell);
-                char operation = parsedCell.operation;
-                int k = 1;
-                std::string arg1Letter, arg2Letter, arg1Digit, arg2Digit;
+                Formula parsedCell = parseFormula(tempCell, std::make_pair(i, j));
                 int a, b;
                 std::pair<int, int> aIndex(-1, -1);
                 std::pair<int, int> bIndex(-1, -1);
 
-                std::stack<FormulaCell> stack;
-                parsedCell.resultCelliIndices = std::make_pair(i, j);
+                std::stack<Formula> stack;
+                bool isArg1Correct = false;
+                bool isArg2Correct = false;
                 stack.push(parsedCell);
                 while (!stack.empty()) {
-                    if (stack.size() > tableData[0].size() * tableData.size() - 1) {
+                    if (stack.size() > tableData[0].size() * tableData.size()) {
                         throw "Error: unable to calculate formulas in the table, there was a looping of formulas";
                     }
-                    aIndex = indicesCell(stack.top().argument1, tableData);
-                    bIndex = indicesCell(stack.top().argument2, tableData);
-                    if (aIndex.first * aIndex.second * bIndex.first * bIndex.second < 0) {
+                    if (isNumber(stack.top().arguments.first)) {
+                        a = atoi(stack.top().arguments.first.c_str());
+                        isArg1Correct = true;
+                    } else {
+                        aIndex = indicesCell(parseCellAddress(stack.top().arguments.first), tableData);
+                        isArg1Correct = aIndex.first * aIndex.second >= 0 ? true : false;
+                    }
+                    if (isNumber(stack.top().arguments.second)) {
+                        b = atoi(stack.top().arguments.second.c_str());
+                        isArg2Correct = true;
+                    } else {
+                        bIndex = indicesCell(parseCellAddress(stack.top().arguments.second), tableData);
+                        isArg2Correct = bIndex.first * bIndex.second >= 0 ? true : false;
+                    }
+                    if (!(isArg1Correct && isArg2Correct)) {
                         throw "Error: reference to a non-existent cell";
                     }
-                    if (isFormula(tableData[aIndex.first][aIndex.second])) {
-                        parsedCell = parseFormula(tableData[aIndex.first][aIndex.second]);
-                        parsedCell.resultCelliIndices = std::make_pair(aIndex.first, aIndex.second);
+
+                    if (!isNumber(stack.top().arguments.first) && isFormula(tableData[aIndex.first][aIndex.second])) {
+                        parsedCell = parseFormula(tableData[aIndex.first][aIndex.second],
+                                                  std::make_pair(aIndex.first, aIndex.second));
                         stack.push(parsedCell);
 
-                    } else if (isFormula(tableData[bIndex.first][bIndex.second].c_str())) {
-                        parsedCell = parseFormula(tableData[bIndex.first][bIndex.second]);
-                        parsedCell.resultCelliIndices = std::make_pair(bIndex.first, bIndex.second);
+                    } else if (!isNumber(stack.top().arguments.second) && isFormula(tableData[bIndex.first][bIndex.second].c_str())) {
+                        parsedCell = parseFormula(tableData[bIndex.first][bIndex.second],
+                                                  std::make_pair(bIndex.first, bIndex.second));
                         stack.push(parsedCell);
                     } else {
-                        a = atoi(tableData[aIndex.first][aIndex.second].c_str());
-                        b = atoi(tableData[bIndex.first][bIndex.second].c_str());
-                        tableData[stack.top().resultCelliIndices.first][stack.top().resultCelliIndices.second] = std::to_string(calculateExpression(a, b, operation));
+                        a = isNumber(stack.top().arguments.first) ? a : atoi(tableData[aIndex.first][aIndex.second].c_str());
+                        b = isNumber(stack.top().arguments.second) ? b : atoi(tableData[bIndex.first][bIndex.second].c_str());
+                        tableData[stack.top().resultCelliIndices.first][stack.top().resultCelliIndices.second] =
+                            std::to_string(calculateExpression(a, b, stack.top().operation));
                         stack.pop();
                     }
                 }
@@ -199,14 +207,16 @@ void readAndCalculateCsv(std::string fileName) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc == 1 || argc > 2) {
-        throw "Error: invalid input. The name of the csv file must be passed as the first argument on the command line.";
-    }
-    std::string fileName = argv[1];
     try {
+        if (argc == 1 || argc > 2) {
+            throw "Error: invalid input. The name of the csv file must be passed as the first argument on the command line.";
+        }
+        std::string fileName = argv[1];
+
         readAndCalculateCsv(fileName);
     } catch (char const *str) {
         std::cout << str << std::endl;
     }
     return 0;
 }
+
