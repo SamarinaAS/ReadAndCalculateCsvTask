@@ -14,10 +14,7 @@ struct CellAddress {
     std::string column;
     int row;
 
-    CellAddress(std::string column, int row) {
-        this->column = column;
-        this->row = row;
-    }
+    CellAddress(std::string column, int row) : column(column), row(row) {}
 };
 
 struct Formula {
@@ -25,11 +22,8 @@ struct Formula {
     std::pair<std::string, std::string> arguments;
     char operation;
 
-    Formula(std::pair<int, int> resultCelliIndices, std::pair<std::string, std::string> arguments, char operation) {
-        this->resultCelliIndices = resultCelliIndices;
-        this->arguments = arguments;
-        this->operation = operation;
-    }
+    Formula(std::pair<int, int> resultCelliIndices, std::pair<std::string, std::string> arguments, char operation)
+        : resultCelliIndices(resultCelliIndices), arguments(arguments), operation(operation) {}
 };
 
 bool isFormula(std::string cell) {
@@ -108,11 +102,23 @@ int calculateExpression(int a, int b, char operation) {
     return result;
 }
 
+bool isTableCorrect(std::vector<std::vector<std::string>> &tableData) {
+    for (int i = 0; i < tableData.size(); i++) {
+        for (int j = 0; j < tableData[i].size(); j++) {
+            if (!(isFormula(tableData[i][j]) && i != 0 && j != 0) && !isNumber(tableData[i][j]) && !(isWord(tableData[i][j]) && i == 0) &&
+                !(tableData[i][j].empty() && i == 0 && j == 0)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 void parseAndCalculateTable(std::vector<std::vector<std::string>> &tableData) {
     for (int i = 0; i < tableData.size(); i++) {
         for (int j = 0; j < tableData[i].size(); j++) {
             std::string tempCell = tableData[i][j];
-            if (isFormula(tempCell)) {
+            if (isFormula(tempCell) /*&& i != 0 && j != 0*/) {
                 Formula parsedCell = parseFormula(tempCell, std::make_pair(i, j));
                 int a, b;
                 std::pair<int, int> aIndex(-1, -1);
@@ -161,10 +167,10 @@ void parseAndCalculateTable(std::vector<std::vector<std::string>> &tableData) {
                         stack.pop();
                     }
                 }
-            } else if (!isNumber(tempCell) && !(isWord(tempCell) && i == 0) &&
+            } /*else if (!isNumber(tempCell) && !(isWord(tempCell) && i == 0) &&
                        !(tempCell.empty() && i == 0 && j == 0)) {
                 throw("Error: invalid cell value");
-            }
+            }*/
         }
     }
 }
@@ -193,16 +199,21 @@ void readAndCalculateCsv(std::string fileName) {
         throw "Error: File could not open";
     }
     file.close();
-    parseAndCalculateTable(tableData);
-    for (int i = 0; i < tableData.size(); i++) {
-        for (int j = 0; j < tableData[i].size(); j++) {
-            std::cout << tableData[i][j];
-            if (j != tableData[i].size() - 1) {
-                std::cout << ",";
+    if (isTableCorrect(tableData)) {
+        parseAndCalculateTable(tableData);
+        for (int i = 0; i < tableData.size(); i++) {
+            for (int j = 0; j < tableData[i].size(); j++) {
+                std::cout << tableData[i][j];
+                if (j != tableData[i].size() - 1) {
+                    std::cout << ",";
+                }
             }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
+    } else {
+        throw("Error: invalid cell value");
     }
+
     return;
 }
 
@@ -219,4 +230,3 @@ int main(int argc, char *argv[]) {
     }
     return 0;
 }
-
