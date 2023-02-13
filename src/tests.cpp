@@ -1,13 +1,7 @@
 #include <calculate_csv.h>
 #include <gtest/gtest.h>
 
-TEST(ReadCsv, CorrectRead) {
-    std::vector<std::vector<std::string>> tableData;
-    ReadCsv("../csv_files/input.csv", tableData);
-    std::vector<std::vector<std::string>> standard{{"", "A", "B", "Cell"},
-                                                   {"1", "1", "0", "1"},
-                                                   {"2", "2", "=A1+Cell30", "0"},
-                                                   {"30", "0", "=B1+A1", "5"}};
+void isTableEqual(std::vector<std::vector<std::string>> &tableData, std::vector<std::vector<std::string>> &standard) {
     ASSERT_EQ(tableData.size(), standard.size());
     for (long unsigned i = 0; i < tableData.size(); i++) {
         ASSERT_EQ(tableData[i].size(), standard[i].size());
@@ -19,12 +13,20 @@ TEST(ReadCsv, CorrectRead) {
     }
 }
 
-TEST(ReadCsv, ExceptionInvalidFromatFile) {
+TEST(ReadCsv, CorrectRead) {
+    std::vector<std::vector<std::string>> tableData;
+    ReadCsv("../csv_files/ReadCsv/correct_read.csv", tableData);
+    std::vector<std::vector<std::string>> standard{
+        {"", "A", "B", "Cell"}, {"1", "1", "0", "1"}, {"2", "2", "=A1+Cell30", "0"}, {"30", "0", "=B1+A1", "5"}};
+    isTableEqual(tableData, standard);
+}
+
+TEST(ReadCsv, ExceptionInvalidFormatFile) {
     std::vector<std::vector<std::string>> tableData;
     EXPECT_THROW(
         {
             try {
-                ReadCsv("../csv_files/input.txt", tableData);
+                ReadCsv("../csv_files/ReadCsv/file.txt", tableData);
             } catch (char const *str) {
                 EXPECT_STREQ("Error: invalid input. The file must be in csv format", str);
                 throw;
@@ -38,13 +40,67 @@ TEST(ReadCsv, ExceptionFileCouldNotOpen) {
     EXPECT_THROW(
         {
             try {
-                ReadCsv("../csv_files/inputt.csv", tableData);
+                ReadCsv("fej.csv", tableData);
             } catch (char const *str) {
                 EXPECT_STREQ("Error: File could not open", str);
                 throw;
             }
         },
         char const *);
+}
+
+TEST(CalculateCsv, Correct_1) {
+    std::vector<std::vector<std::string>> tableData;
+    ReadCsv("../csv_files/CalculateTable/correct_calculate/1.csv", tableData);
+    calculateTable(tableData);
+    std::vector<std::vector<std::string>> standard{
+        {"", "A", "B", "Cell"}, {"1", "1", "0", "1"}, {"2", "2", "6", "0"}, {"30", "0", "2", "5"}};
+    ASSERT_EQ(tableData.size(), standard.size());
+    isTableEqual(tableData, standard);
+}
+
+TEST(CalculateCsv, Correct_2) {
+    std::vector<std::vector<std::string>> tableData;
+    ReadCsv("../csv_files/CalculateTable/correct_calculate/2.csv", tableData);
+    calculateTable(tableData);
+    std::vector<std::vector<std::string>> standard{{"", "A", "B", "Cell", "D"},
+                                                   {"1", "1", "13", "1", "3"},
+                                                   {"2", "2", "3", "0", "2"},
+                                                   {"30", "7", "14", "8", "5"}};
+    ASSERT_EQ(tableData.size(), standard.size());
+    isTableEqual(tableData, standard);
+}
+
+TEST(CalculateCsv, Correct_3) {
+    std::vector<std::vector<std::string>> tableData;
+    ReadCsv("../csv_files/CalculateTable/correct_calculate/3.csv", tableData);
+    calculateTable(tableData);
+    std::vector<std::vector<std::string>> standard{
+        {"", "A", "B", "Cell", "D"}, {"1", "1", "2", "1", "1"}, {"2", "2", "6", "0", "2"}, {"30", "3", "3", "1", "3"}};
+    ASSERT_EQ(tableData.size(), standard.size());
+    isTableEqual(tableData, standard);
+}
+
+TEST(CalculateCsv, Correct_4) {
+    std::vector<std::vector<std::string>> tableData;
+    ReadCsv("../csv_files/CalculateTable/correct_calculate/4.csv", tableData);
+    calculateTable(tableData);
+    std::vector<std::vector<std::string>> standard{
+        {"", "A", "B", "Cell", "D"}, {"1", "5", "7", "1", "10"}, {"2", "5", "5", "0", "5"}, {"30", "3", "4", "1", "2"}};
+    ASSERT_EQ(tableData.size(), standard.size());
+    isTableEqual(tableData, standard);
+}
+
+TEST(CalculateCsv, Correct_5) {
+    std::vector<std::vector<std::string>> tableData;
+    ReadCsv("../csv_files/CalculateTable/correct_calculate/5.csv", tableData);
+    calculateTable(tableData);
+    std::vector<std::vector<std::string>> standard{{"", "A", "B", "Cell", "D"},
+                                                   {"1", "5", "7", "3", "4"},
+                                                   {"2", "2", "19", "3", "2"},
+                                                   {"30", "12", "7", "3", "3"}};
+    ASSERT_EQ(tableData.size(), standard.size());
+    isTableEqual(tableData, standard);
 }
 
 int main(int argc, char **argv) {
