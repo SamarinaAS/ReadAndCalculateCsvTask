@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
 add_executable(main src/main.cpp src/calculate_csv.cpp)
-add_executable(tests src/tests.cpp)
+add_executable(tests src/tests.cpp src/calculate_csv.cpp)
 
 target_link_libraries(tests ${GTEST_LIBRARIES} Threads::Threads)
 

@@ -9,7 +9,10 @@ int main(int argc, char *argv[]) {
         }
         std::string fileName = argv[1];
 
-        readAndCalculateCsv(fileName);
+        std::vector<std::vector<std::string>> tableData;
+        ReadCsv(fileName, tableData);
+        calculateTable(tableData);
+        printTable(tableData);
     } catch (char const *str) {
         std::cout << str << std::endl;
     }
