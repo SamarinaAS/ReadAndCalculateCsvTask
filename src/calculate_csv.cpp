@@ -56,7 +56,7 @@ bool isWord(std::string cell) {
     return std::regex_match(cell, word);
 }
 
-std::pair<int, int> indicesCell(CellAddress argument, std::vector<std::vector<std::string>> &tableData) {
+std::pair<int, int> getIndicesCell(CellAddress argument, std::vector<std::vector<std::string>> &tableData) {
     std::pair<int, int> indices(-1, -1);
     for (long unsigned int j = 0; j < tableData[0].size(); j++) {
         if (argument.column == tableData[0][j]) {
@@ -172,14 +172,14 @@ void calculateTable(std::vector<std::vector<std::string>> &tableData) {
                         a = atoi(stack.top().arguments.first.c_str());
                         isArg1Correct = true;
                     } else {
-                        aIndex = indicesCell(CellAddress(stack.top().arguments.first), tableData);
+                        aIndex = getIndicesCell(CellAddress(stack.top().arguments.first), tableData);
                         isArg1Correct = isCellAddressCorrect(aIndex);
                     }
                     if (isNumber(stack.top().arguments.second)) {
                         b = atoi(stack.top().arguments.second.c_str());
                         isArg2Correct = true;
                     } else {
-                        bIndex = indicesCell(CellAddress(stack.top().arguments.second), tableData);
+                        bIndex = getIndicesCell(CellAddress(stack.top().arguments.second), tableData);
                         isArg2Correct = isCellAddressCorrect(bIndex);
                     }
                     if (!(isArg1Correct && isArg2Correct)) {
