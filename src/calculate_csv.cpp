@@ -103,7 +103,8 @@ bool isTableCorrect(std::vector<std::vector<std::string>> &tableData) {
             return false;
         }
         for (long unsigned int j = 0; j < tableData[i].size(); j++) {
-            if (!(isFormula(tableData[i][j]) && i != 0 && j != 0) && !isNumber(tableData[i][j]) &&
+            if (!(isFormula(tableData[i][j]) && i != 0 && j != 0) &&
+                !(isNumber(tableData[i][j]) && i != 0 && (j != 0 || atoi(tableData[i][j].c_str()) > 0)) &&
                 !(isWord(tableData[i][j]) && i == 0) && !(tableData[i][j].empty() && i == 0 && j == 0)) {
                 return false;
             }
@@ -112,7 +113,7 @@ bool isTableCorrect(std::vector<std::vector<std::string>> &tableData) {
     return true;
 }
 
-void ReadCsv(std::string fileName, std::vector<std::vector<std::string>> &tableData) {
+void readCsv(std::string fileName, std::vector<std::vector<std::string>> &tableData) {
     std::string suffix = ".csv";
     if (suffix.length() > fileName.length() ||
         fileName.compare(fileName.length() - suffix.length(), suffix.length(), suffix) != 0) {

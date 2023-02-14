@@ -13,98 +13,181 @@ void isTableEqual(std::vector<std::vector<std::string>> &tableData, std::vector<
     }
 }
 
-TEST(ReadCsv, CorrectRead) {
+void isCalculateCsvCorrect(std::string fileName, std::vector<std::vector<std::string>> standard) {
     std::vector<std::vector<std::string>> tableData;
-    ReadCsv("../csv_files/ReadCsv/correct_read.csv", tableData);
+    readCsv(fileName, tableData);
+    calculateTable(tableData);
+    ASSERT_EQ(tableData.size(), standard.size());
+    isTableEqual(tableData, standard);
+}
+
+void expectExcepiton(std::string fileName, const char *expectedException) {
+    std::vector<std::vector<std::string>> tableData;
+    ASSERT_THROW(
+        {
+            try {
+                readCsv(fileName, tableData);
+                calculateTable(tableData);
+            } catch (const char *str) {
+                EXPECT_STREQ(str, expectedException);
+                throw;
+            }
+        },
+        char const *);
+}
+
+TEST(ReadCsv, Correct) {
     std::vector<std::vector<std::string>> standard{
         {"", "A", "B", "Cell"}, {"1", "1", "0", "1"}, {"2", "2", "=A1+Cell30", "0"}, {"30", "0", "=B1+A1", "5"}};
+    std::vector<std::vector<std::string>> tableData;
+    readCsv("../csv_files/ReadCsv/correct_read.csv", tableData);
+
     isTableEqual(tableData, standard);
 }
 
-TEST(ReadCsv, ExceptionInvalidFormatFile) {
-    std::vector<std::vector<std::string>> tableData;
-    EXPECT_THROW(
-        {
-            try {
-                ReadCsv("../csv_files/ReadCsv/file.txt", tableData);
-            } catch (char const *str) {
-                EXPECT_STREQ("Error: invalid input. The file must be in csv format", str);
-                throw;
-            }
-        },
-        char const *);
+TEST(ReadCsvException, InvalidFormatFile) {
+    expectExcepiton("../csv_files/ReadCsv/file.txt", "Error: invalid input. The file must be in csv format");
 }
 
-TEST(ReadCsv, ExceptionFileCouldNotOpen) {
-    std::vector<std::vector<std::string>> tableData;
-    EXPECT_THROW(
-        {
-            try {
-                ReadCsv("fej.csv", tableData);
-            } catch (char const *str) {
-                EXPECT_STREQ("Error: File could not open", str);
-                throw;
-            }
-        },
-        char const *);
-}
+TEST(ReadCsvException, FileCouldNotOpen) { expectExcepiton("fej.csv", "Error: File could not open"); }
 
-TEST(CalculateCsv, Correct_1) {
-    std::vector<std::vector<std::string>> tableData;
-    ReadCsv("../csv_files/CalculateTable/correct_calculate/1.csv", tableData);
-    calculateTable(tableData);
+TEST(CalculateCsvCorrect, 1) {
     std::vector<std::vector<std::string>> standard{
-        {"", "A", "B", "Cell"}, {"1", "1", "0", "1"}, {"2", "2", "6", "0"}, {"30", "0", "2", "5"}};
-    ASSERT_EQ(tableData.size(), standard.size());
-    isTableEqual(tableData, standard);
+        {"", "A", "B", "Cell"}, {"1", "1", "0", "1"}, {"2", "2", "0", "0"}, {"30", "0", "2", "5"}};
+    isCalculateCsvCorrect("../csv_files/CalculateTable/correct_calculate/1.csv", standard);
 }
 
-TEST(CalculateCsv, Correct_2) {
-    std::vector<std::vector<std::string>> tableData;
-    ReadCsv("../csv_files/CalculateTable/correct_calculate/2.csv", tableData);
-    calculateTable(tableData);
+TEST(CalculateCsvCorrect, 2) {
+    std::vector<std::vector<std::string>> standard{
+        {"", "A", "B", "Cell", "D"}, {"1", "1", "0", "1", "3"}, {"2", "2", "3", "0", "2"}, {"30", "1", "0", "2", "-1"}};
+    isCalculateCsvCorrect("../csv_files/CalculateTable/correct_calculate/2.csv", standard);
+}
+
+TEST(CalculateCsvCorrect, 3) {
+    std::vector<std::vector<std::string>> standard{
+        {"", "A", "B", "Cell", "D"}, {"1", "1", "2", "1", "1"}, {"2", "2", "6", "0", "2"}, {"30", "3", "2", "1", "1"}};
+    isCalculateCsvCorrect("../csv_files/CalculateTable/correct_calculate/3.csv", standard);
+}
+
+TEST(CalculateCsvCorrect, 4) {
     std::vector<std::vector<std::string>> standard{{"", "A", "B", "Cell", "D"},
-                                                   {"1", "1", "13", "1", "3"},
-                                                   {"2", "2", "3", "0", "2"},
-                                                   {"30", "7", "14", "8", "5"}};
-    ASSERT_EQ(tableData.size(), standard.size());
-    isTableEqual(tableData, standard);
+                                                   {"1", "0", "-1", "1", "0"},
+                                                   {"2", "-3", "5", "0", "5"},
+                                                   {"30", "3", "4", "1", "2"}};
+    isCalculateCsvCorrect("../csv_files/CalculateTable/correct_calculate/4.csv", standard);
 }
 
-TEST(CalculateCsv, Correct_3) {
-    std::vector<std::vector<std::string>> tableData;
-    ReadCsv("../csv_files/CalculateTable/correct_calculate/3.csv", tableData);
-    calculateTable(tableData);
-    std::vector<std::vector<std::string>> standard{
-        {"", "A", "B", "Cell", "D"}, {"1", "1", "2", "1", "1"}, {"2", "2", "6", "0", "2"}, {"30", "3", "3", "1", "3"}};
-    ASSERT_EQ(tableData.size(), standard.size());
-    isTableEqual(tableData, standard);
-}
-
-TEST(CalculateCsv, Correct_4) {
-    std::vector<std::vector<std::string>> tableData;
-    ReadCsv("../csv_files/CalculateTable/correct_calculate/4.csv", tableData);
-    calculateTable(tableData);
-    std::vector<std::vector<std::string>> standard{
-        {"", "A", "B", "Cell", "D"}, {"1", "5", "7", "1", "10"}, {"2", "5", "5", "0", "5"}, {"30", "3", "4", "1", "2"}};
-    ASSERT_EQ(tableData.size(), standard.size());
-    isTableEqual(tableData, standard);
-}
-
-TEST(CalculateCsv, Correct_5) {
-    std::vector<std::vector<std::string>> tableData;
-    ReadCsv("../csv_files/CalculateTable/correct_calculate/5.csv", tableData);
-    calculateTable(tableData);
+TEST(CalculateCsvCorrect, 5) {
     std::vector<std::vector<std::string>> standard{{"", "A", "B", "Cell", "D"},
-                                                   {"1", "5", "7", "3", "4"},
-                                                   {"2", "2", "19", "3", "2"},
-                                                   {"30", "12", "7", "3", "3"}};
-    ASSERT_EQ(tableData.size(), standard.size());
-    isTableEqual(tableData, standard);
+                                                   {"1", "6", "7", "4", "0"},
+                                                   {"2", "2", "13", "0", "2"},
+                                                   {"30", "13", "0", "6", "-1"}};
+    isCalculateCsvCorrect("../csv_files/CalculateTable/correct_calculate/5.csv", standard);
+}
+
+TEST(CalculateCsvCorrect, 6) {
+    std::vector<std::vector<std::string>> standard{{"", "A", "B", "Cell", "D"},
+                                                   {"1", "1", "-2", "0", "0"},
+                                                   {"2", "-1", "3", "3", "10"},
+                                                   {"30", "11", "23", "23", "23"},
+                                                   {"4", "21", "42", "46", "23"}};
+    isCalculateCsvCorrect("../csv_files/CalculateTable/correct_calculate/6.csv", standard);
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 1) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/1.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 2) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/2.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 3) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/3.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 4) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/4.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 5) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/5.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 6) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/6.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 7) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/7.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 8) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/8.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 9) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/9.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 10) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/10.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 11) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/11.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 12) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/12.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 13) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/13.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 14) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/14.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionTableIsSetIncorrectly, 15) {
+    expectExcepiton("../csv_files/CalculateTable/incorrect_table/15.csv", "Error: table is set incorrectly");
+}
+
+TEST(ExceptionReferenceToNonExistenetCell, 1) {
+    expectExcepiton("../csv_files/CalculateTable/reference_to_a_non_existent_cell/1.csv",
+                    "Error: reference to a non-existent cell");
+}
+
+TEST(ExceptionReferenceToNonExistenetCell, 2) {
+    expectExcepiton("../csv_files/CalculateTable/reference_to_a_non_existent_cell/2.csv",
+                    "Error: reference to a non-existent cell");
+}
+
+TEST(ExceptionReferenceToNonExistenetCell, 3) {
+    expectExcepiton("../csv_files/CalculateTable/reference_to_a_non_existent_cell/3.csv",
+                    "Error: reference to a non-existent cell");
+}
+
+TEST(ExceptionLoopingFormulas, 1) {
+    expectExcepiton("../csv_files/CalculateTable/looping_of_formulas/1.csv",
+                    "Error: unable to calculate formulas in the table, there was a looping of formulas");
+}
+
+TEST(ExceptionLoopingFormulas, 2) {
+    expectExcepiton("../csv_files/CalculateTable/looping_of_formulas/2.csv",
+                    "Error: unable to calculate formulas in the table, there was a looping of formulas");
+}
+
+TEST(ExceptionDivisionByZero, 1) {
+    expectExcepiton("../csv_files/CalculateTable/division_by_zero/1.csv", "Error: division by zero");
+}
+
+TEST(ExceptionDivisionByZero, 2) {
+    expectExcepiton("../csv_files/CalculateTable/division_by_zero/2.csv", "Error: division by zero");
 }
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
-
     return RUN_ALL_TESTS();
 }
